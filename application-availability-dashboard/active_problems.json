@@ -1,0 +1,138 @@
+{
+    "0": {
+      "title": "Active Problems",
+      "type": "data",
+      "query": "fetch dt.davis.problems\n| expand managementZones                    \n| filter event.status == \"ACTIVE\"\n| filter managementZones == $ManagementZone \n| summarize activeProblems = count()   ",
+      "visualization": "singleValue",
+      "visualizationSettings": {
+        "autoSelectVisualization": false,
+        "thresholds": [
+          {
+            "id": 1,
+            "field": "activeProblems",
+            "title": "",
+            "isEnabled": true,
+            "rules": [
+              {
+                "id": 0,
+                "color": {
+                  "Default": "var(--dt-colors-charts-categorical-color-09-default, #649438)"
+                },
+                "comparator": "≥",
+                "label": "",
+                "value": 0
+              },
+              {
+                "id": 1,
+                "color": {
+                  "Default": "var(--dt-colors-charts-status-warning-default, #eca440)"
+                },
+                "comparator": "≥",
+                "label": ""
+              },
+              {
+                "id": 2,
+                "color": {
+                  "Default": "var(--dt-colors-charts-status-critical-default, #c4233b)"
+                },
+                "comparator": "≥",
+                "label": ""
+              }
+            ]
+          }
+        ],
+        "chartSettings": {
+          "gapPolicy": "gap",
+          "circleChartSettings": {
+            "groupingThresholdType": "relative",
+            "groupingThresholdValue": 0,
+            "valueType": "relative"
+          },
+          "categoryOverrides": {},
+          "curve": "linear",
+          "pointsDisplay": "auto",
+          "categoricalBarChartSettings": {
+            "layout": "horizontal",
+            "categoryAxisTickLayout": "horizontal",
+            "scale": "absolute",
+            "groupMode": "stacked",
+            "colorPaletteMode": "multi-color",
+            "valueAxisScale": "linear"
+          },
+          "colorPalette": "categorical",
+          "valueRepresentation": "absolute",
+          "truncationMode": "middle"
+        },
+        "singleValue": {
+          "showLabel": false,
+          "label": "countIf(event.status == \"ACTIVE\")",
+          "prefixIcon": "WarningIcon",
+          "isIconVisible": true,
+          "recordField": "activeProblems",
+          "autoscale": true,
+          "sparklineSettings": {},
+          "alignment": "center",
+          "trend": {
+            "trendType": "auto",
+            "isVisible": true
+          },
+          "colorThresholdTarget": "background"
+        },
+        "table": {
+          "rowDensity": "condensed",
+          "enableSparklines": false,
+          "hiddenColumns": [],
+          "linewrapEnabled": false,
+          "lineWrapIds": [],
+          "monospacedFontEnabled": false,
+          "monospacedFontColumns": [],
+          "columnWidths": {},
+          "columnTypeOverrides": []
+        },
+        "honeycomb": {
+          "shape": "hexagon",
+          "legend": {
+            "hidden": false,
+            "position": "auto",
+            "ratio": "auto"
+          },
+          "dataMappings": {},
+          "displayedFields": [],
+          "truncationMode": "middle",
+          "colorMode": "color-palette",
+          "colorPalette": "categorical"
+        },
+        "histogram": {
+          "legend": {
+            "position": "auto"
+          },
+          "yAxis": {
+            "label": "Frequency",
+            "isLabelVisible": true,
+            "scale": "linear"
+          },
+          "colorPalette": "categorical",
+          "dataMappings": [],
+          "variant": "single",
+          "truncationMode": "middle"
+        },
+        "valueBoundaries": {
+          "min": "auto",
+          "max": "auto"
+        }
+      },
+      "querySettings": {
+        "maxResultRecords": 1000,
+        "defaultScanLimitGbytes": 500,
+        "maxResultMegaBytes": 1,
+        "defaultSamplingRatio": 10,
+        "enableSampling": false
+      },
+      "davis": {
+        "enabled": false,
+        "davisVisualization": {
+          "isAvailable": true
+        }
+      }
+    }
+} 
