@@ -1,0 +1,114 @@
+{
+    "6": {
+        "title": "Requests",
+        "type": "data",
+        "query": "timeSeries count = sum(dt.service.request.count), by: {dt.entity.service}\n| fieldsAdd count.single_value = arraySum(count)\n| fieldsAdd Service = entityName(dt.entity.service)\n| join [fetch dt.entity.service\n| expand managementZones\n| filter managementZones == $ManagementZone\n| fieldsAdd Service = entity.name],\n  on: {left[Service] == right[Service]}\n| fields Service, count.single_value\n| dedup Service\n| summarize sum(count.single_value)",
+        "visualization": "singleValue",
+        "visualizationSettings": {
+          "autoSelectVisualization": false,
+          "thresholds": [],
+          "chartSettings": {
+            "gapPolicy": "gap",
+            "circleChartSettings": {
+              "groupingThresholdType": "relative",
+              "groupingThresholdValue": 0,
+              "valueType": "relative"
+            },
+            "categoryOverrides": {},
+            "curve": "linear",
+            "pointsDisplay": "auto",
+            "categoricalBarChartSettings": {
+              "layout": "horizontal",
+              "categoryAxisTickLayout": "horizontal",
+              "scale": "absolute",
+              "groupMode": "stacked",
+              "colorPaletteMode": "multi-color",
+              "valueAxisScale": "linear"
+            },
+            "colorPalette": "categorical",
+            "valueRepresentation": "absolute",
+            "truncationMode": "middle"
+          },
+          "singleValue": {
+            "showLabel": false,
+            "label": "count.single_value",
+            "prefixIcon": "AnalyticsIcon",
+            "isIconVisible": false,
+            "recordField": "sum(count.single_value)",
+            "autoscale": true,
+            "sparklineSettings": {},
+            "alignment": "center",
+            "trend": {
+              "trendType": "custom",
+              "isVisible": true,
+              "trendField": "sum(count.single_value)",
+              "isRelative": false
+            },
+            "colorThresholdTarget": "value"
+          },
+          "table": {
+            "rowDensity": "condensed",
+            "enableSparklines": false,
+            "hiddenColumns": [],
+            "linewrapEnabled": false,
+            "lineWrapIds": [],
+            "monospacedFontEnabled": false,
+            "monospacedFontColumns": [],
+            "columnWidths": {},
+            "columnTypeOverrides": []
+          },
+          "honeycomb": {
+            "shape": "hexagon",
+            "legend": {
+              "hidden": false,
+              "position": "auto",
+              "ratio": "auto"
+            },
+            "dataMappings": {},
+            "displayedFields": [],
+            "truncationMode": "middle",
+            "colorMode": "color-palette",
+            "colorPalette": "categorical"
+          },
+          "histogram": {
+            "legend": {
+              "position": "auto"
+            },
+            "yAxis": {
+              "label": "Frequency",
+              "isLabelVisible": true,
+              "scale": "linear"
+            },
+            "colorPalette": "categorical",
+            "dataMappings": [
+              {
+                "valueAxis": "sum(count.single_value)",
+                "rangeAxis": ""
+              }
+            ],
+            "variant": "single",
+            "truncationMode": "middle",
+            "displayedFields": [
+              "sum(count.single_value)"
+            ]
+          },
+          "valueBoundaries": {
+            "min": "auto",
+            "max": "auto"
+          }
+        },
+        "querySettings": {
+          "maxResultRecords": 1000,
+          "defaultScanLimitGbytes": 500,
+          "maxResultMegaBytes": 1,
+          "defaultSamplingRatio": 10,
+          "enableSampling": false
+        },
+        "davis": {
+          "enabled": false,
+          "davisVisualization": {
+            "isAvailable": true
+          }
+        }
+      }
+}

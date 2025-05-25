@@ -1,0 +1,175 @@
+{"25": {
+    "title": "Latency Trends",
+    "type": "data",
+    "query": "\ntimeseries svc_p90 = percentile(dt.service.request.response_time, 90),\n                       by:{ dt.entity.service },\n                       bins:60,\n                       nonempty:true\n\n| fieldsAdd Service = entityName(dt.entity.service)\n| join [fetch dt.entity.service\n| expand managementZones\n| filter managementZones == $ManagementZone\n| fieldsAdd Service = entity.name],\n  on: {left[Service] == right[Service]}\n| dedup Service\n| fieldsAdd requestCount_timeseries = svc_p90\n| fieldsAdd metricName = \"Throughput\"",
+    "visualization": "lineChart",
+    "visualizationSettings": {
+      "autoSelectVisualization": false,
+      "thresholds": [],
+      "chartSettings": {
+        "gapPolicy": "gap",
+        "circleChartSettings": {
+          "groupingThresholdType": "relative",
+          "groupingThresholdValue": 0,
+          "valueType": "relative"
+        },
+        "categoryOverrides": {},
+        "curve": "linear",
+        "pointsDisplay": "auto",
+        "categoricalBarChartSettings": {
+          "layout": "horizontal",
+          "categoryAxisTickLayout": "horizontal",
+          "scale": "absolute",
+          "groupMode": "stacked",
+          "colorPaletteMode": "multi-color",
+          "valueAxisScale": "linear",
+          "categoryAxisLabel": "dt.entity.service,Service,right.entity.name,right.id,right.managementZones,right.Service",
+          "valueAxisLabel": "interval",
+          "tooltipVariant": "single"
+        },
+        "colorPalette": "categorical",
+        "valueRepresentation": "absolute",
+        "truncationMode": "middle",
+        "bandChartSettings": {
+          "lower": "svc_p90",
+          "upper": "requestCount_timeseries"
+        },
+        "xAxisScaling": "analyzedTimeframe",
+        "xAxisLabel": "timeframe",
+        "xAxisIsLabelVisible": false,
+        "hiddenLegendFields": [
+          "dt.entity.service",
+          "right.entity.name",
+          "right.id",
+          "right.managementZones",
+          "right.Service",
+          "metricName"
+        ],
+        "fieldMapping": {
+          "timestamp": "timeframe",
+          "leftAxisValues": [
+            "requestCount_timeseries",
+            "svc_p90"
+          ]
+        },
+        "leftYAxisSettings": {
+          "isLabelVisible": true,
+          "label": "Service request response time"
+        },
+        "rightYAxisSettings": {
+          "scale": "log",
+          "min": "auto"
+        },
+        "tooltip": {
+          "seriesDisplayMode": "multi-line",
+          "variant": "shared"
+        },
+        "legend": {
+          "hidden": true
+        }
+      },
+      "singleValue": {
+        "showLabel": true,
+        "label": "dt.entity.service",
+        "prefixIcon": "AnalyticsIcon",
+        "isIconVisible": false,
+        "recordField": "dt.entity.service",
+        "autoscale": true,
+        "sparklineSettings": {
+          "record": "requestCount_timeseries"
+        },
+        "alignment": "center",
+        "trend": {
+          "trendType": "auto",
+          "isVisible": true
+        },
+        "colorThresholdTarget": "value"
+      },
+      "table": {
+        "rowDensity": "condensed",
+        "enableSparklines": false,
+        "hiddenColumns": [],
+        "linewrapEnabled": false,
+        "lineWrapIds": [],
+        "monospacedFontEnabled": false,
+        "monospacedFontColumns": [],
+        "columnWidths": {},
+        "columnTypeOverrides": [
+          {
+            "fields": [
+              "svc_p90",
+              "requestCount_timeseries"
+            ],
+            "value": "sparkline",
+            "id": 1746661204148
+          }
+        ]
+      },
+      "honeycomb": {
+        "shape": "hexagon",
+        "legend": {
+          "hidden": false,
+          "position": "auto",
+          "ratio": "auto"
+        },
+        "dataMappings": {
+          "value": "dt.entity.service"
+        },
+        "displayedFields": [
+          "dt.entity.service",
+          "Service",
+          "right.entity.name",
+          "right.id",
+          "right.managementZones",
+          "right.Service"
+        ],
+        "truncationMode": "middle",
+        "colorMode": "color-palette",
+        "colorPalette": "categorical"
+      },
+      "histogram": {
+        "legend": {
+          "position": "auto"
+        },
+        "yAxis": {
+          "label": "Frequency",
+          "isLabelVisible": true,
+          "scale": "linear"
+        },
+        "colorPalette": "categorical",
+        "dataMappings": [
+          {
+            "valueAxis": "interval",
+            "rangeAxis": ""
+          }
+        ],
+        "variant": "single",
+        "truncationMode": "middle",
+        "displayedFields": [
+          "dt.entity.service",
+          "Service",
+          "right.entity.name",
+          "right.id",
+          "right.managementZones",
+          "right.Service"
+        ]
+      },
+      "valueBoundaries": {
+        "min": "auto",
+        "max": "auto"
+      }
+    },
+    "querySettings": {
+      "maxResultRecords": 1000,
+      "defaultScanLimitGbytes": 500,
+      "maxResultMegaBytes": 1,
+      "defaultSamplingRatio": 10,
+      "enableSampling": false
+    },
+    "davis": {
+      "enabled": false,
+      "davisVisualization": {
+        "isAvailable": true
+      }
+    }
+  }}

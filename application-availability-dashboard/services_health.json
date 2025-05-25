@@ -1,0 +1,123 @@
+{
+    "4": {
+        "title": "Services Health",
+        "type": "data",
+        "query": "fetch dt.entity.service\n\n| fieldsAdd \n    entityId = toString(id)\n| fieldsAdd\n    id,\n    entityId,\n    entity.name,\n    serviceType,\n    lifetime,\n    lifeTimeEndMillis = unixMillisFromTimestamp(lifetime[end])\n\n| lookup [\n    fetch dt.davis.events.snapshots\n    | filter in(affected_entity_type, \"dt.entity.service\")\n    | expand affected_entity_ids\n    |dedup event.id, sort: {timestamp desc}\n    | filter event.status == \"ACTIVE\"\n    | fieldsAdd healthIndicators =  if(in(event.type,{\"SERVICE_ERROR_RATE_INCREASED\", \"SERVICE_SLOWDOWN\", \"SERVICE_UNEXPECTED_HIGH_LOAD\", \"SERVICE_UNEXPECTED_LOW_LOAD\", \"CUSTOM_ALERT\"}),\n                record(event.id, event.date, event.description, event.group)) \n    | summarize {healthIndicators = arrayRemoveNulls(collectArray(healthIndicators)), by:{affected_entity_ids}}],\n                sourceField : id, lookupField: affected_entity_ids, fields: {healthIndicators}, executionOrder: leftFirst\n    | sort arraySize(coalesce(healthIndicators, array())) desc\n    | limit 1000\n    \n\n| fieldsAdd runs_on_from_attr = entityAttr(id, \"runs_on\", type: \"dt.entity.service\")\n| fieldsAdd pg_id = runs_on_from_attr[dt.entity.process_group]\n| fieldsAdd pg_name = entityName(pg_id, type: \"dt.entity.process_group\")\n| fieldsAdd entityAttr(id, \"tags\", type: \"dt.entity.service\"),\n            entityAttr(id, \"softwareTechnologies\", type: \"dt.entity.service\"),\n            entityAttr(id, \"serviceDetectionAttributes\", type: \"dt.entity.service\"),\n            entityAttr(id, \"publicCloudRegion\", type: \"dt.entity.service\")\n\n| fieldsAdd icon_from_attr = entityAttr(id, \"icon\", type: \"dt.entity.service\")\n| fieldsAdd entity = record(entityId = id, displayName = entity.name, lifetimeEndMillis = unixMillisFromTimestamp(lifetime[end]),\n            extraInfo = if(serviceType == \"UNIFIED\", toString(serviceDetectionAttributes), else: concat(pg_name)),\n            icon = icon_from_attr[primaryIconType])\n\n| fields HealthAlerts = healthIndicators, Service = entity[displayName]\n| fieldsAdd HealthAlerts = if(isNull(HealthAlerts), \"Healthy\")\n| sort Service asc\n\n| join [fetch dt.entity.service\n| expand managementZones\n| filter managementZones == $ManagementZone\n| fieldsAdd Service = entity.name],\n  on: {left[Service] == right[Service]}\n| dedup Service\n| fields Service, HealthAlerts",
+        "visualization": "honeycomb",
+        "visualizationSettings": {
+          "autoSelectVisualization": false,
+          "thresholds": [],
+          "chartSettings": {
+            "gapPolicy": "gap",
+            "circleChartSettings": {
+              "groupingThresholdType": "relative",
+              "groupingThresholdValue": 0,
+              "valueType": "relative"
+            },
+            "categoryOverrides": {},
+            "curve": "linear",
+            "pointsDisplay": "auto",
+            "categoricalBarChartSettings": {
+              "layout": "horizontal",
+              "categoryAxisTickLayout": "horizontal",
+              "scale": "absolute",
+              "groupMode": "stacked",
+              "colorPaletteMode": "multi-color",
+              "valueAxisScale": "linear"
+            },
+            "colorPalette": "categorical",
+            "valueRepresentation": "absolute",
+            "truncationMode": "middle"
+          },
+          "singleValue": {
+            "showLabel": true,
+            "label": "",
+            "prefixIcon": "AnalyticsIcon",
+            "isIconVisible": false,
+            "autoscale": true,
+            "alignment": "center",
+            "colorThresholdTarget": "value"
+          },
+          "table": {
+            "rowDensity": "condensed",
+            "enableSparklines": false,
+            "hiddenColumns": [],
+            "linewrapEnabled": false,
+            "lineWrapIds": [],
+            "monospacedFontEnabled": false,
+            "monospacedFontColumns": [],
+            "columnWidths": {},
+            "columnTypeOverrides": []
+          },
+          "honeycomb": {
+            "shape": "hexagon",
+            "legend": {
+              "hidden": true,
+              "position": "bottom",
+              "ratio": "auto"
+            },
+            "dataMappings": {
+              "value": "HealthAlerts"
+            },
+            "displayedFields": [
+              "Service"
+            ],
+            "truncationMode": "end",
+            "colorMode": "custom-colors",
+            "colorPalette": "categorical",
+            "customColors": [
+              {
+                "id": 5420103.400000006,
+                "value": "Healthy",
+                "color": {
+                  "Default": "var(--dt-colors-charts-categorical-color-09-default, #649438)"
+                },
+                "comparator": "="
+              },
+              {
+                "id": 5492720.5,
+                "value": "Alert",
+                "color": "#b3007d",
+                "comparator": "="
+              }
+            ]
+          },
+          "histogram": {
+            "legend": {
+              "position": "auto"
+            },
+            "yAxis": {
+              "label": "Frequency",
+              "isLabelVisible": true,
+              "scale": "linear"
+            },
+            "colorPalette": "categorical",
+            "dataMappings": [],
+            "variant": "single",
+            "truncationMode": "middle"
+          },
+          "valueBoundaries": {
+            "min": "auto",
+            "max": "auto"
+          },
+          "legend": {
+            "showLegend": false,
+            "position": "auto",
+            "ratio": 10
+          }
+        },
+        "querySettings": {
+          "maxResultRecords": 1000,
+          "defaultScanLimitGbytes": 500,
+          "maxResultMegaBytes": 1,
+          "defaultSamplingRatio": 10,
+          "enableSampling": false
+        },
+        "davis": {
+          "enabled": false,
+          "davisVisualization": {
+            "isAvailable": true
+          }
+        }
+      }
+}

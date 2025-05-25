@@ -1,0 +1,126 @@
+{    "15": {
+      "title": "Avg CPU Usage",
+      "type": "data",
+      "query": "timeseries usage = avg(dt.process.cpu.usage), by: {dt.entity.process_group}\n| join [\n    fetch dt.entity.process_group\n    | expand managementZones\n    | filter managementZones == $ManagementZone\n    | fieldsAdd pg_name = entity.name\n], on: { left[dt.entity.process_group] == right[id] }\n\n\n| fieldsAdd usage.single_value = arrayAvg(usage)\n| summarize avg = avg(usage.single_value)",
+      "visualization": "singleValue",
+      "visualizationSettings": {
+        "thresholds": [],
+        "chartSettings": {
+          "gapPolicy": "gap",
+          "circleChartSettings": {
+            "groupingThresholdType": "relative",
+            "groupingThresholdValue": 0,
+            "valueType": "relative"
+          },
+          "categoryOverrides": {},
+          "curve": "linear",
+          "pointsDisplay": "auto",
+          "categoricalBarChartSettings": {
+            "layout": "horizontal",
+            "categoryAxisTickLayout": "horizontal",
+            "scale": "absolute",
+            "groupMode": "stacked",
+            "colorPaletteMode": "multi-color",
+            "valueAxisScale": "linear"
+          },
+          "colorPalette": "categorical",
+          "valueRepresentation": "absolute",
+          "truncationMode": "middle",
+          "xAxisScaling": "analyzedTimeframe",
+          "xAxisLabel": "timeframe",
+          "xAxisIsLabelVisible": false,
+          "hiddenLegendFields": [
+            "interval"
+          ],
+          "leftYAxisSettings": {
+            "isLabelVisible": true,
+            "label": "Process memory usage"
+          }
+        },
+        "singleValue": {
+          "showLabel": false,
+          "label": "avg",
+          "prefixIcon": "AnalyticsIcon",
+          "isIconVisible": false,
+          "recordField": "avg",
+          "autoscale": true,
+          "sparklineSettings": {},
+          "alignment": "center",
+          "trend": {
+            "trendType": "custom",
+            "isVisible": true,
+            "trendField": "avg",
+            "isRelative": false
+          },
+          "colorThresholdTarget": "value"
+        },
+        "table": {
+          "rowDensity": "condensed",
+          "enableSparklines": false,
+          "hiddenColumns": [],
+          "linewrapEnabled": false,
+          "lineWrapIds": [],
+          "monospacedFontEnabled": false,
+          "monospacedFontColumns": [],
+          "columnWidths": {},
+          "columnTypeOverrides": []
+        },
+        "honeycomb": {
+          "shape": "hexagon",
+          "legend": {
+            "hidden": false,
+            "position": "auto",
+            "ratio": "auto"
+          },
+          "dataMappings": {},
+          "displayedFields": [],
+          "truncationMode": "middle",
+          "colorMode": "color-palette",
+          "colorPalette": "categorical"
+        },
+        "histogram": {
+          "legend": {
+            "position": "auto"
+          },
+          "yAxis": {
+            "label": "Frequency",
+            "isLabelVisible": true,
+            "scale": "linear"
+          },
+          "colorPalette": "categorical",
+          "dataMappings": [],
+          "variant": "single",
+          "truncationMode": "middle"
+        },
+        "valueBoundaries": {
+          "min": "auto",
+          "max": "auto"
+        },
+        "autoSelectVisualization": false,
+        "unitsOverrides": [
+          {
+            "identifier": "avg",
+            "unitCategory": "percentage",
+            "baseUnit": "percent",
+            "displayUnit": null,
+            "decimals": 2,
+            "suffix": "",
+            "delimiter": false,
+            "added": 1746659333913
+          }
+        ]
+      },
+      "querySettings": {
+        "maxResultRecords": 1000,
+        "defaultScanLimitGbytes": 500,
+        "maxResultMegaBytes": 1,
+        "defaultSamplingRatio": 10,
+        "enableSampling": false
+      },
+      "davis": {
+        "enabled": false,
+        "davisVisualization": {
+          "isAvailable": true
+        }
+      }
+    }}

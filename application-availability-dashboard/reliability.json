@@ -1,0 +1,157 @@
+{"23": {
+    "title": "Reliability %",
+    "type": "data",
+    "query": "fetch dt.entity.service\n\n| fieldsAdd \n    entityId = toString(id)\n| fieldsAdd\n    id,\n    entityId,\n    entity.name,\n    serviceType,\n    lifetime,\n    lifeTimeEndMillis = unixMillisFromTimestamp(lifetime[end])\n\n| lookup [\n    fetch dt.davis.events.snapshots\n    | filter in(affected_entity_type, \"dt.entity.service\")\n    | expand affected_entity_ids\n    |dedup event.id, sort: {timestamp desc}\n    | filter event.status == \"ACTIVE\"\n    | fieldsAdd healthIndicators =  if(in(event.type,{\"SERVICE_ERROR_RATE_INCREASED\", \"SERVICE_SLOWDOWN\", \"SERVICE_UNEXPECTED_HIGH_LOAD\", \"SERVICE_UNEXPECTED_LOW_LOAD\", \"CUSTOM_ALERT\"}),\n                record(event.id, event.date, event.description, event.group)) \n    | summarize {healthIndicators = arrayRemoveNulls(collectArray(healthIndicators)), by:{affected_entity_ids}}],\n                sourceField : id, lookupField: affected_entity_ids, fields: {healthIndicators}, executionOrder: leftFirst\n    | sort arraySize(coalesce(healthIndicators, array())) desc\n    \n\n| fieldsAdd runs_on_from_attr = entityAttr(id, \"runs_on\", type: \"dt.entity.service\")\n| fieldsAdd pg_id = runs_on_from_attr[dt.entity.process_group]\n| fieldsAdd pg_name = entityName(pg_id, type: \"dt.entity.process_group\")\n| fieldsAdd entityAttr(id, \"tags\", type: \"dt.entity.service\"),\n            entityAttr(id, \"softwareTechnologies\", type: \"dt.entity.service\"),\n            entityAttr(id, \"serviceDetectionAttributes\", type: \"dt.entity.service\"),\n            entityAttr(id, \"publicCloudRegion\", type: \"dt.entity.service\")\n\n| fieldsAdd icon_from_attr = entityAttr(id, \"icon\", type: \"dt.entity.service\")\n| fieldsAdd entity = record(entityId = id, displayName = entity.name, lifetimeEndMillis = unixMillisFromTimestamp(lifetime[end]),\n            extraInfo = if(serviceType == \"UNIFIED\", toString(serviceDetectionAttributes), else: concat(pg_name)),\n            icon = icon_from_attr[primaryIconType])\n\n| fields HealthAlerts = healthIndicators, Service = entity[displayName]\n| fieldsAdd alertCount = arraySize(coalesce(HealthAlerts, array()))\n| fieldsAdd Reliability = 100.0 - (alertCount * 10.0)\n| fieldsAdd HealthAlerts = if(isNull(HealthAlerts), \"🟩 Healthy\", else: \"🟥 Unhealthy\")\n\n| sort Service asc\n\n| join [fetch dt.entity.service\n| expand managementZones\n| filter managementZones == $ManagementZone\n| fieldsAdd Service = entity.name],\n  on: {left[Service] == right[Service]}\n| dedup Service\n|lookup[timeseries {  `Response Time/ Latency` = percentile(dt.service.request.response_time, 90)},\n                       by:{ dt.entity.service }\n| fieldsAdd Service = entityName(dt.entity.service)\n| fieldsAdd `Response Time/ Latency` = arrayAvg(`Response Time/ Latency`)], \n  lookupField:Service, \n  SourceField:Service, \n  Fields: {`Response Time/ Latency`}\n\n|lookup[timeseries {`Request Volume` = sum(dt.service.request.count)}, by: { dt.entity.service }\n\n| fieldsAdd Service = entityName(dt.entity.service) \n| fieldsAdd `Request Volume` = arraySum(`Request Volume`)\n], lookupField:Service, SourceField: Service, Fields: `Request Volume`\n\n\n|lookup[timeseries {\n  err5xx = sum(\n              dt.service.request.count,\n              filter:{ http.response.status_code >= 500\n                       AND http.response.status_code <= 599 })\n}, by: {dt.entity.service}    \n\n| fieldsAdd Service = entityName(dt.entity.service)\n| fieldsAdd err5xx = arraySum(err5xx)\n], lookupField:Service, SourceField: Service, Fields: {err5xx}\n| fieldsAdd err5xx = if(isNull(err5xx), 0, else: err5xx)\n\n|lookup[timeseries {\n  err4xx = sum(\n              dt.service.request.count,\n              filter:{ http.response.status_code >= 400\n                       AND http.response.status_code <= 499 })\n}, by: {dt.entity.service}    \n\n| fieldsAdd Service = entityName(dt.entity.service)\n| fieldsAdd err4xx = arraySum(err4xx)\n], lookupField:Service, SourceField: Service, Fields: {err4xx}\n\n| fieldsAdd err4xx = if(isNull(err4xx), 0, else: err4xx)\n| fieldsAdd err4xx = if((err4xx>10*err5xx), 0, else: err4xx) \n| fieldsAdd `Request Volume` = if(isNull(`Request Volume`), 0, else: `Request Volume`)\n| fieldsAdd `Response Time/ Latency` = if(isNull(`Response Time/ Latency`), 0, else: `Response Time/ Latency`)\n\n| fieldsAdd `HTTP Error Rate (%)` = if(`Request Volume` > 100 AND (err5xx + err4xx)< `Request Volume`, ((err5xx + err4xx) / `Request Volume`) * 100.0, else: 0.0)\n| fieldsAdd `Reliability (%)`= 100 - `HTTP Error Rate (%)`\n| fields Service, HealthAlerts, `Reliability (%)`,`HTTP Error Rate (%)`,`Request Volume`, `Response Time/ Latency`\n\n| summarize Reliability = avg(`Reliability (%)`)\n\n\n",
+    "visualization": "singleValue",
+    "visualizationSettings": {
+      "thresholds": [
+        {
+          "id": 1,
+          "field": "Reliability",
+          "title": "",
+          "isEnabled": true,
+          "rules": [
+            {
+              "id": 0,
+              "color": {
+                "Default": "var(--dt-colors-charts-categorical-color-09-default, #649438)"
+              },
+              "comparator": "≥",
+              "label": "",
+              "value": 99.5
+            },
+            {
+              "id": 1,
+              "color": {
+                "Default": "var(--dt-colors-charts-status-warning-default, #eca440)"
+              },
+              "comparator": "≥",
+              "label": "",
+              "value": 99
+            },
+            {
+              "id": 2,
+              "color": {
+                "Default": "var(--dt-colors-charts-status-critical-default, #c4233b)"
+              },
+              "comparator": "≥",
+              "label": "",
+              "value": 0
+            }
+          ]
+        }
+      ],
+      "chartSettings": {
+        "gapPolicy": "gap",
+        "circleChartSettings": {
+          "groupingThresholdType": "relative",
+          "groupingThresholdValue": 0,
+          "valueType": "relative"
+        },
+        "categoryOverrides": {},
+        "curve": "linear",
+        "pointsDisplay": "auto",
+        "categoricalBarChartSettings": {
+          "layout": "horizontal",
+          "categoryAxisTickLayout": "horizontal",
+          "scale": "absolute",
+          "groupMode": "stacked",
+          "colorPaletteMode": "multi-color",
+          "valueAxisScale": "linear"
+        },
+        "colorPalette": "categorical",
+        "valueRepresentation": "absolute",
+        "truncationMode": "middle",
+        "xAxisScaling": "analyzedTimeframe",
+        "xAxisLabel": "timeframe",
+        "xAxisIsLabelVisible": false,
+        "hiddenLegendFields": [
+          "interval"
+        ],
+        "leftYAxisSettings": {
+          "isLabelVisible": true,
+          "label": "Availability rate (by location) [Browser monitor]"
+        }
+      },
+      "singleValue": {
+        "showLabel": false,
+        "label": "countIf(event.status == \"ACTIVE\")",
+        "prefixIcon": "WarningIcon",
+        "isIconVisible": true,
+        "recordField": "Reliability",
+        "autoscale": true,
+        "sparklineSettings": {
+          "record": "series",
+          "lineType": "smooth",
+          "variant": "area"
+        },
+        "alignment": "center",
+        "trend": {
+          "trendType": "custom",
+          "isVisible": true,
+          "trendField": "Reliability",
+          "isRelative": false
+        },
+        "colorThresholdTarget": "background"
+      },
+      "table": {
+        "rowDensity": "condensed",
+        "enableSparklines": false,
+        "hiddenColumns": [],
+        "linewrapEnabled": false,
+        "lineWrapIds": [],
+        "monospacedFontEnabled": false,
+        "monospacedFontColumns": [],
+        "columnWidths": {},
+        "columnTypeOverrides": [],
+        "columnOrder": [
+          "[\"Reliability\"]"
+        ]
+      },
+      "honeycomb": {
+        "shape": "hexagon",
+        "legend": {
+          "hidden": false,
+          "position": "auto",
+          "ratio": "auto"
+        },
+        "dataMappings": {},
+        "displayedFields": [],
+        "truncationMode": "middle",
+        "colorMode": "color-palette",
+        "colorPalette": "categorical"
+      },
+      "histogram": {
+        "legend": {
+          "position": "auto"
+        },
+        "yAxis": {
+          "label": "Frequency",
+          "isLabelVisible": true,
+          "scale": "linear"
+        },
+        "colorPalette": "categorical",
+        "dataMappings": [],
+        "variant": "single",
+        "truncationMode": "middle"
+      },
+      "valueBoundaries": {
+        "min": "auto",
+        "max": "auto"
+      },
+      "autoSelectVisualization": false
+    },
+    "querySettings": {
+      "maxResultRecords": 1000,
+      "defaultScanLimitGbytes": 500,
+      "maxResultMegaBytes": 1,
+      "defaultSamplingRatio": 10,
+      "enableSampling": false
+    },
+    "davis": {
+      "enabled": false,
+      "davisVisualization": {
+        "isAvailable": true
+      }
+    }
+  }}
